@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { GAMES } from "@/lib/data";
 import { seededScores } from "@/lib/data";
 
@@ -85,7 +86,9 @@ export default function GameDetail({ params }: PageProps) {
           </div>
 
           <div className="detail-actions">
-            <button className="btn xl pulse">▶ JUGAR AHORA</button>
+            <Link href={`/juego/${game.id}/jugar`} className="btn xl pulse">
+              ▶ JUGAR AHORA
+            </Link>
             <button className="btn ghost lg" onClick={() => router.push("/")}>
               VOLVER AL VAULT
             </button>

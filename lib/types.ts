@@ -20,3 +20,10 @@ export interface LeaderboardEntry {
   score: number;
   date: string;         // formato DD/MM/YYYY
 }
+
+export interface SavedScore {
+  game: string;        // game.id
+  score: number;
+  name: string;        // max 10 chars, uppercase
+  at: number;          // timestamp Date.now()
+}
