@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { GAMES } from "@/lib/data";
-import type { SavedScore } from "@/lib/types";
+import type { SavedScore, User } from "@/lib/types";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -25,6 +25,19 @@ export default function GamePlayer({ params }: PageProps) {
   useEffect(() => {
     params.then((p) => setId(p.id));
   }, [params]);
+
+  // Load user and pre-fill name
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("av_user");
+      if (stored) {
+        const user: User = JSON.parse(stored);
+        setName(user.name);
+      }
+    } catch (e) {
+      console.error("Error loading user:", e);
+    }
+  }, []);
 
   const game = useMemo(() => {
     if (!id) return null;

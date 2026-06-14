@@ -27,3 +27,7 @@ export interface SavedScore {
   name: string;        // max 10 chars, uppercase
   at: number;          // timestamp Date.now()
 }
+
+export interface User {
+  name: string;        // max 10 chars, uppercase
+}

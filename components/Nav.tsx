@@ -1,12 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import type { User } from "@/lib/types";
 
 export default function Nav() {
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Load user from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("av_user");
+      if (stored) {
+        setUser(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.error("Error loading user:", e);
+    }
+  }, []);
 
   const isActive = (route: string) => {
     if (route === "/") {
@@ -18,6 +33,17 @@ export default function Nav() {
   const go = (path: string) => {
     setOpen(false);
     // Navigation handled by Link component
+  };
+
+  const handleSignOut = () => {
+    try {
+      localStorage.removeItem("av_user");
+      setUser(null);
+      setOpen(false);
+      router.push("/");
+    } catch (e) {
+      console.error("Error signing out:", e);
+    }
   };
 
   return (
@@ -46,7 +72,20 @@ export default function Nav() {
           <span>CRÉDITOS · 03</span>
         </div>
 
-        <button className="btn auth-btn">Iniciar Sesión</button>
+        {user ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span className="pixel neon-cyan" style={{ fontSize: 11 }}>
+              {user.name}
+            </span>
+            <button className="btn ghost" onClick={handleSignOut}>
+              Cerrar Sesión
+            </button>
+          </div>
+        ) : (
+          <Link href="/auth" className="btn auth-btn">
+            Iniciar Sesión
+          </Link>
+        )}
 
         <button
           className="btn ghost hamburger"
@@ -86,13 +125,36 @@ export default function Nav() {
           Salón de la Fama
         </Link>
 
-        <Link
-          href="/auth"
-          className={isActive("/auth") ? "active" : ""}
-          onClick={() => go("/auth")}
-        >
-          Iniciar Sesión
-        </Link>
+        {user ? (
+          <>
+            <div
+              className="pixel neon-cyan"
+              style={{
+                fontSize: 11,
+                marginTop: 16,
+                paddingTop: 16,
+                borderTop: "1px solid var(--border)",
+              }}
+            >
+              {user.name}
+            </div>
+            <button
+              className="btn ghost"
+              style={{ marginTop: 8, width: "100%" }}
+              onClick={handleSignOut}
+            >
+              Cerrar Sesión
+            </button>
+          </>
+        ) : (
+          <Link
+            href="/auth"
+            className={isActive("/auth") ? "active" : ""}
+            onClick={() => go("/auth")}
+          >
+            Iniciar Sesión
+          </Link>
+        )}
 
         <div style={{ flex: 1 }}></div>
 
