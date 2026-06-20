@@ -1,89 +1,115 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import Link from "next/link";
-import type { User } from "@/lib/types";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+import { useUser } from '@/app/context/UserContext';
 
 export default function Nav() {
   const [open, setOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
-  const router = useRouter();
+  const { username, avatarUrl, signOut } = useUser();
 
-  // Load user from localStorage
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("av_user");
-      if (stored) {
-        setUser(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.error("Error loading user:", e);
-    }
-  }, []);
+  const isLibrary = pathname.startsWith('/games');
+  const isHall = pathname === '/hall-of-fame';
+  const isAbout = pathname === '/about';
+  const isPlayPage = pathname.endsWith('/play');
 
-  const isActive = (route: string) => {
-    if (route === "/") {
-      return pathname === "/" || pathname.startsWith("/juego/");
-    }
-    return pathname === route;
-  };
-
-  const go = (path: string) => {
+  function close() {
     setOpen(false);
-    // Navigation handled by Link component
-  };
+  }
 
-  const handleSignOut = () => {
-    try {
-      localStorage.removeItem("av_user");
-      setUser(null);
-      setOpen(false);
-      router.push("/");
-    } catch (e) {
-      console.error("Error signing out:", e);
-    }
-  };
+  async function handleSignOut() {
+    await signOut();
+    close();
+  }
+
+  const initial = username ? username[0].toUpperCase() : null;
 
   return (
     <>
-      <nav className="av-nav">
-        <Link href="/" className="logo" onClick={() => setOpen(false)}>
-          <div className="logo-mark"></div>
+      <nav className={`av-nav${isPlayPage ? ' nav-hide-mobile' : ''}`}>
+        <Link href="/" className="logo" onClick={close}>
+          <div className="logo-mark" />
           <div className="logo-text neon-cyan">
             ARCADE <span className="neon-magenta">VAULT</span>
           </div>
         </Link>
 
         <div className="links">
-          <Link href="/" className={isActive("/") ? "active" : ""}>
+          <Link href="/games" className={isLibrary ? 'active' : ''}>
             Biblioteca
           </Link>
-          <Link href="/salon" className={isActive("/salon") ? "active" : ""}>
+          <Link href="/hall-of-fame" className={isHall ? 'active' : ''}>
             Salón de la Fama
+          </Link>
+          <Link href="/about" className={isAbout ? 'active' : ''}>
+            Sobre Nosotros
           </Link>
         </div>
 
-        <div className="spacer"></div>
+        <div className="spacer" />
 
         <div className="coin-counter">
-          <span className="coin"></span>
+          <span className="coin" />
           <span>CRÉDITOS · 03</span>
         </div>
 
-        {user ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span className="pixel neon-cyan" style={{ fontSize: 11 }}>
-              {user.name}
+        {username ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                overflow: 'hidden',
+                border: '2px solid var(--neon-cyan)',
+                boxShadow: '0 0 8px var(--neon-cyan)',
+                flexShrink: 0,
+                background: 'var(--bg-card)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatarUrl}
+                  alt={username}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: 'var(--neon-cyan)',
+                    lineHeight: 1,
+                  }}
+                >
+                  {initial}
+                </span>
+              )}
+            </div>
+            <span
+              style={{
+                fontSize: 12,
+                fontFamily: 'var(--font-mono)',
+                letterSpacing: '0.08em',
+                color: 'var(--ink)',
+              }}
+            >
+              {username}
             </span>
-            <button className="btn ghost" onClick={handleSignOut}>
-              Cerrar Sesión
+            <button className="btn ghost auth-btn" onClick={handleSignOut}>
+              CERRAR SESIÓN
             </button>
           </div>
         ) : (
           <Link href="/auth" className="btn auth-btn">
-            Iniciar Sesión
+            ACCESO
           </Link>
         )}
 
@@ -97,73 +123,59 @@ export default function Nav() {
       </nav>
 
       <div
-        className={`av-mobile-backdrop${open ? " open" : ""}`}
-        onClick={() => setOpen(false)}
-      ></div>
-
-      <aside className={`av-mobile-panel${open ? " open" : ""}`}>
+        className={`av-mobile-backdrop${open ? ' open' : ''}${isPlayPage ? ' nav-hide-mobile' : ''}`}
+        onClick={close}
+      />
+      <aside
+        className={`av-mobile-panel${open ? ' open' : ''}${isPlayPage ? ' nav-hide-mobile' : ''}`}
+      >
         <div
           className="pixel neon-cyan"
           style={{ fontSize: 11, marginBottom: 16 }}
         >
           MENÚ
         </div>
-
         <Link
-          href="/"
-          className={isActive("/") ? "active" : ""}
-          onClick={() => go("/")}
+          href="/games"
+          className={isLibrary ? 'active' : ''}
+          onClick={close}
         >
           Biblioteca
         </Link>
-
         <Link
-          href="/salon"
-          className={isActive("/salon") ? "active" : ""}
-          onClick={() => go("/salon")}
+          href="/hall-of-fame"
+          className={isHall ? 'active' : ''}
+          onClick={close}
         >
           Salón de la Fama
         </Link>
-
-        {user ? (
-          <>
-            <div
-              className="pixel neon-cyan"
-              style={{
-                fontSize: 11,
-                marginTop: 16,
-                paddingTop: 16,
-                borderTop: "1px solid var(--border)",
-              }}
-            >
-              {user.name}
-            </div>
-            <button
-              className="btn ghost"
-              style={{ marginTop: 8, width: "100%" }}
-              onClick={handleSignOut}
-            >
-              Cerrar Sesión
-            </button>
-          </>
+        <Link href="/about" className={isAbout ? 'active' : ''} onClick={close}>
+          Sobre Nosotros
+        </Link>
+        {username ? (
+          <button
+            className="btn ghost"
+            style={{ textAlign: 'left', padding: 0, marginTop: 8 }}
+            onClick={handleSignOut}
+          >
+            CERRAR SESIÓN ({username})
+          </button>
         ) : (
           <Link
             href="/auth"
-            className={isActive("/auth") ? "active" : ""}
-            onClick={() => go("/auth")}
+            className={pathname === '/auth' ? 'active' : ''}
+            onClick={close}
           >
-            Iniciar Sesión
+            ACCESO
           </Link>
         )}
-
-        <div style={{ flex: 1 }}></div>
-
+        <div style={{ flex: 1 }} />
         <div
           className="pixel"
           style={{
             fontSize: 9,
-            color: "var(--ink-faint)",
-            letterSpacing: "0.16em",
+            color: 'var(--ink-faint)',
+            letterSpacing: '0.16em',
           }}
         >
           CRÉDITOS · 03
