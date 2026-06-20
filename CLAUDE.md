@@ -4,83 +4,72 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 @AGENTS.md
 
-## Project Overview
+## Project
 
-Arcade Vault is a retro arcade game portal web application where users can play classic games online and compete for high scores. The app features a dark arcade cabinet theme with neon aesthetics (cyan #00f5ff, magenta #ff006e, yellow #f5ff00) and retro CRT monitor styling.
+Arcade Vault — online gaming platform where users play classic arcade games and compete for points on per-game leaderboards. Uses **Spec Driven Design** via the `/spec` and `/spec-impl` skills from `npx skills@latest add Klerith/fernando-skills` (see `skills-lock.json`).
 
-**Important**: All UI text, labels, buttons, navigation, messages, and content must be in Spanish.
+## Stack
 
-## Development Workflow: Spec-Driven Design
+- **Next.js 16.2.6** with App Router — read `node_modules/next/dist/docs/` before writing Next.js code; APIs differ from training data
+- **React 19.2.4**
+- **Tailwind CSS v4** (PostCSS plugin via `@tailwindcss/postcss`)
+- **TypeScript**
+- **Supabase** (`@supabase/ssr`, `@supabase/supabase-js`) — auth + scores persistence
+- **Resend** — contact form email delivery
 
-This project follows **Spec-Driven Design** methodology based on `/spec` and `/spec-impl` patterns:
-- Specifications should be written first in a `/spec` directory before implementation
-- Implementation follows the spec in `/spec-impl`
-- Reference: https://github.com/Klerith/fernando-skills
+No test runner configured.
 
-To add the Fernando skills:
-```bash
-npx skills@latest add Klerith/fernando-skills
-```
+## Skills
 
-## Technology Stack
+Usa siempre `/frontend-design` para diseñar la interfaz de usuario.
 
-- **Framework**: Next.js 16.2.9 (App Router)
-- **React**: 19.2.4
-- **TypeScript**: 5.x
-- **Styling**: Tailwind CSS v4
-- **Fonts**: Google Fonts - "Press Start 2P" (headings/titles) + "Courier Prime" (body/monospace)
+Usa `/spec-impl-game` (skill local en `.agents/skills/spec-impl-game/`) como variante de `/spec-impl` para specs de juegos: sigue el mismo flujo (Fases 1–4) y al terminar la implementación encadena automáticamente `@skin-designer` y luego `@mobile-porter` de forma secuencial.
 
-## Commands
+## Agentes
 
-### Development
-```bash
-npm run dev          # Start development server
-npm run build        # Build production bundle
-npm start           # Start production server
-npm run lint        # Run ESLint
-```
+- **`game-planner`** — sugiere el próximo juego a implementar evaluando diversidad, factibilidad y reconocimiento clásico. Úsalo con "qué juego sigue". Detalle: `.claude/agents/game-planner.md`.
+- **`game-jam`** — dado un tema, genera ≥2 specs completos en `specs/game-jam/<game-id>/`. Úsalo con "game jam: \<tema\>". Detalle: `.claude/agents/game-jam.md`.
+- **`skin-designer`** — aplica los 3 skins canónicos (classic, retro, neon) a un juego. Úsalo con "aplica skins a \<juego\>". Detalle: `.claude/agents/skin-designer.md`.
+- **`mobile-porter`** — añade controles táctiles (spec 10) a un juego sin tocar el componente canvas. Úsalo con "porta \<juego\> a mobile". Detalle: `.claude/agents/mobile-porter.md`.
+- **`game-performance-booster`** — audita y corrige los 7 patrones de performance (spec 12) en un juego. Úsalo con "optimiza \<juego\>". Detalle: `.claude/agents/game-performance-booster.md`.
+- **`security-auditor`** — audita seguridad de DB Supabase (RLS, políticas, advisors) y app Next.js (headers, proxy.ts, secretos, deps). Solo lectura. Bitácora en `references/security/audit-log.md`. Úsalo con "audita seguridad". Detalle: `.claude/agents/security-auditor.md`.
 
-## Project Structure
+## Architecture
 
-- `/app` - Next.js App Router pages and layouts
-  - `layout.tsx` - Root layout with font configuration
-  - `page.tsx` - Home page
-  - `globals.css` - Global styles (Tailwind)
-- `/public` - Static assets (SVG icons, game assets)
-- `/references` - Reference materials and documentation
-- `prompt-arcade-vult.md` - Detailed design specification for the arcade portal
+App Router exclusively — no `pages/` directory.
 
-## Path Aliases
+### Routes (`app/`)
 
-TypeScript paths are configured with `@/*` mapping to the root directory:
-```typescript
-import { Something } from '@/components/Something'
-```
+- `layout.tsx` — root layout (Geist fonts, global CSS, `UserContext` provider, `Nav`)
+- `page.tsx` — home / landing
+- `about/` — about + contact form
+- `api/contact/` — Resend-backed contact endpoint
+- `auth/` — Supabase auth page
+- `games/` — games index (`GamesGrid.tsx`) + per-game routes like: `arkanoid`, `asteroids`, `frogger`, `snake`, `tetris` and more...
+  (see `references/implemented-games.md`) when you need to check which games are implemented and how to implement new ones.
 
-## Key Features to Implement
+- `games/[id]/` — dynamic game detail with nested `play/` route
+- `hall-of-fame/` — leaderboard / scores
+- `context/UserContext.tsx` — client-side auth user context
+- `data/` — static catalog: `games.ts`, `scores.ts`, `index.ts`
+- `RevealObserver.tsx` — scroll-reveal animations
 
-1. **Game Library**: Grid of game cards with thumbnails, titles, descriptions, and high scores
-2. **Game Player**: CRT monitor-styled container for HTML games with HUD (score, lives, level)
-3. **Authentication**: Login/register with guest mode option, social auth (Google, GitHub)
-4. **Leaderboards**: Top 10 global scores per game, personal best tracking
-5. **Responsive Design**: Mobile-first, works across all devices
+### Shared code
 
-## Technical Implementation Notes
+- `components/Nav.tsx` — top navigation
+- `components/MobileGamepad.tsx` + `MobileGamepad.module.css` — gamepad táctil reutilizable
+- `components/games/` — canvas game implementations (`ArkanoidGame`, `AsteroidsGame`, `FroggerGame`, `SnakeGame`, `TetrisGame`)
+- `lib/supabase/` — `client.ts` (browser), `server.ts` (RSC/route handlers), `types.ts` (DB types)
+- `public/` — sprite sheets (`spritesheet-breakout.png`, `fruits.png`) and audio (`ball-bounce.mp3`, `break-sound.mp3`)
 
-- Game area uses sandboxed iframe/canvas for loading external HTML game files
-- localStorage for guest score tracking
-- Backend integration points planned for REST API or Supabase (authenticated users)
-- Animations: CRT glow effects, scanline textures, neon borders, 3D tilt on hover
-- Google Fonts must be loaded: "Press Start 2P" and "Courier Prime"
+### Specs
 
-## Design Guidelines
+`specs/` holds the spec-driven design history, plus `specs/game-jam/` for thematic jams.
 
-- **Background**: #0a0a0f with pixel/scanline texture overlay, animated perspective grid
-- **Typography**: "Press Start 2P" for headings/titles, monospace for UI
-- **Effects**: CRT glow on cards, neon borders on hover, pixel-style button press animations
-- **Language**: All text must be in Spanish (e.g., "JUGAR", "VOLVER AL VAULT", "PUNTUACIÓN")
-- **Interactions**: Card lift + glow on hover, typewriter animations, retro pixel spinner for loading
+## Conventions
 
-## Important Next.js Considerations
-
-This project uses Next.js 16.2.9, which may have breaking changes from previous versions. Always consult `node_modules/next/dist/docs/` for current API documentation before implementing features.
+- Server Components by default; add `"use client"` only when needed (game canvases, auth context, interactive forms).
+- New routes: folder under `app/` with `page.tsx`.
+- Shared UI in `components/`; game logic colocated in `components/games/<Game>.tsx`.
+- Supabase: import from `lib/supabase/server` in RSC / route handlers, `lib/supabase/client` in client components.
+- New games follow the existing pattern: spec in `specs/`, canvas component in `components/games/`, route under `app/games/<name>/`, score writes through `lib/supabase`.
